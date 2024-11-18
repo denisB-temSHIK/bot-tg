@@ -1,0 +1,39 @@
+import telebot
+import requests
+
+API_TOKEN = '8001094382:AAGsrftf-wq7CxcRkVJwP2qoQFAT1kjqs4E'
+WEATHER_API_KEY = '22103d83ce02da2e3191b956978b0f52'
+
+bot = telebot.TeleBot(API_TOKEN)
+
+
+@bot.message_handler(commands=['start', 'help'])
+def send_welcome(message):
+    bot.reply_to(message, "Привет! Отправь мне название города, и я скажу тебе погоду.")
+
+
+@bot.message_handler(func=lambda message: True)
+def get_weather(message):
+    city = message.text
+    weather_data = get_weather_data(city)
+
+    if weather_data:
+        bot.reply_to(message, weather_data)
+    else:
+        bot.reply_to(message, "Не удалось получить данные о погоде. Проверьте название города.")
+
+
+def get_weather_data(city: str):
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        temperature = data['main']['temp']
+        weather_description = data['weather'][0]['description']
+        return f"Температура в {city}: {temperature}°C\nОписание: {weather_description}"
+    return None
+
+
+if __name__ == '__main__':
+    bot.polling()
